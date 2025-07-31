@@ -7,6 +7,7 @@ from gymnasium.utils import seeding
 import networkx as nx
 import numpy as np
 
+#TODO Need make the request Queue Continous
 
 _COLLISION_LAYERS = 2
 
@@ -54,6 +55,10 @@ class ObservationType(Enum):
     FLATTENED = 1
     IMAGE = 2
     IMAGE_DICT = 3
+
+class Request_Queue_Type(Enum):
+    FIXED = 0
+    CONTINUOUS = 1
 
 
 class ImageLayer(Enum):
@@ -155,6 +160,7 @@ class Warehouse(gym.Env):
         max_inactivity_steps: Optional[int],
         max_steps: Optional[int],
         reward_type: RewardType,
+        request_queue_type: Request_Queue_Type = Request_Queue_Type.FIXED,
         layout: Optional[str] = None,
         observation_type: ObservationType = ObservationType.FLATTENED,
         image_observation_layers: List[ImageLayer] = [
@@ -261,6 +267,7 @@ class Warehouse(gym.Env):
 
         self.request_queue_size = request_queue_size
         self.request_queue = []
+        self.request_queue_type = request_queue_type
 
         self.agents: List[Agent] = []
 
@@ -793,9 +800,14 @@ class Warehouse(gym.Env):
 
         self._recalc_grid()
 
+        if self.request_queue_type == Request_Queue_Type.FIXED:
+            size = self.request_queue_size
+        elif self.request_queue_type == Request_Queue_Type.CONTINUOUS:
+            size = np.random.randint(1,6)
+
         self.request_queue = list(
             self.np_random.choice(
-                self.shelfs, size=self.request_queue_size, replace=False
+                self.shelfs, size=size, replace=False
             )
         )
 
@@ -903,6 +915,11 @@ class Warehouse(gym.Env):
         shelf_delivered = False
         for y, x in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, x, y]
+            if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
+                if np.random.rand() < 0.3:
+                    candidates = [s for s in self.shelfs if s not in self.request_queue]
+                    new_request = self.np_random.choice(candidates)
+                    self.request_queue.append(new_request)
             if not shelf_id:
                 continue
             shelf = self.shelfs[shelf_id - 1]
@@ -912,9 +929,10 @@ class Warehouse(gym.Env):
             # a shelf was successfully delived.
             shelf_delivered = True
             # remove from queue and replace it
-            candidates = [s for s in self.shelfs if s not in self.request_queue]
-            new_request = self.np_random.choice(candidates)
-            self.request_queue[self.request_queue.index(shelf)] = new_request
+            if self.request_queue_type == Request_Queue_Type.FIXED:
+                candidates = [s for s in self.shelfs if s not in self.request_queue]
+                new_request = self.np_random.choice(candidates)
+                self.request_queue[self.request_queue.index(shelf)] = new_request
             # also reward the agents
             if self.reward_type == RewardType.GLOBAL:
                 rewards += 1
