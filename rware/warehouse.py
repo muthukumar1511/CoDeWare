@@ -913,13 +913,14 @@ class Warehouse(gym.Env):
         self._recalc_grid()
 
         shelf_delivered = False
+        if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
+            if np.random.rand() < 0.3:
+                candidates = [s for s in self.shelfs if s not in self.request_queue]
+                new_request = self.np_random.choice(candidates)
+                self.request_queue.append(new_request)
         for y, x in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, x, y]
-            if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
-                if np.random.rand() < 0.3:
-                    candidates = [s for s in self.shelfs if s not in self.request_queue]
-                    new_request = self.np_random.choice(candidates)
-                    self.request_queue.append(new_request)
+
             if not shelf_id:
                 continue
             shelf = self.shelfs[shelf_id - 1]

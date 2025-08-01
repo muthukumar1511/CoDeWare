@@ -2,7 +2,7 @@ import itertools
 
 from gymnasium import register
 
-from rware.warehouse import RewardType, ObservationType
+from rware.warehouse import RewardType, ObservationType, Request_Queue_Type
 
 _sizes = {
     "tiny": (1, 3),
@@ -35,6 +35,7 @@ for size, diff, agents in _perms:
             "max_inactivity_steps": None,
             "max_steps": 500,
             "reward_type": RewardType.INDIVIDUAL,
+            "request_queue_type": Request_Queue_Type.CONTINUOUS,
         },
     )
 
