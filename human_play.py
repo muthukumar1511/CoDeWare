@@ -39,6 +39,7 @@ def parse_args():
     parser.add_argument(
         "--display_info",
         action="store_true",
+        default= True,
         help="Display agent info per step",
     )
     return parser.parse_args()

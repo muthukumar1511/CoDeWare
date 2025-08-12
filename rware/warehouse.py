@@ -916,8 +916,9 @@ class Warehouse(gym.Env):
         if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
             if np.random.rand() < 0.3:
                 candidates = [s for s in self.shelfs if s not in self.request_queue]
-                new_request = self.np_random.choice(candidates)
-                self.request_queue.append(new_request)
+                if candidates:
+                    new_request = self.np_random.choice(candidates)
+                    self.request_queue.append(new_request)
         for y, x in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, x, y]
 
@@ -930,6 +931,8 @@ class Warehouse(gym.Env):
             # a shelf was successfully delived.
             shelf_delivered = True
             # remove from queue and replace it
+            if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
+                self.request_queue.pop(self.request_queue.index(shelf))
             if self.request_queue_type == Request_Queue_Type.FIXED:
                 candidates = [s for s in self.shelfs if s not in self.request_queue]
                 new_request = self.np_random.choice(candidates)
