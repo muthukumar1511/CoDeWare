@@ -268,6 +268,12 @@ class Warehouse(gym.Env):
         self.request_queue_size = request_queue_size
         self.request_queue = []
         self.request_queue_type = request_queue_type
+        
+        # Fixed interval throttle settings (active only in CONTINUOUS mode)
+        if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
+            self._continuous_step_counter: int = 0
+            self.continuous_spawn_interval: int = 5  # attempt every N steps
+            self.continuous_spawn_prob: float = 0.3  # probability of spawning at interval
 
         self.agents: List[Agent] = []
 
@@ -770,6 +776,8 @@ class Warehouse(gym.Env):
         Agent.counter = 0
         self._cur_inactive_steps = 0
         self._cur_steps = 0
+        # reset continuous counter
+        self._continuous_step_counter = 0
 
         # n_xshelf = (self.grid_size[1] - 1) // 3
         # n_yshelf = (self.grid_size[0] - 2) // 9
@@ -800,10 +808,11 @@ class Warehouse(gym.Env):
 
         self._recalc_grid()
 
-        if self.request_queue_type == Request_Queue_Type.FIXED:
-            size = self.request_queue_size
-        elif self.request_queue_type == Request_Queue_Type.CONTINUOUS:
-            size = np.random.randint(1,6)
+        # initial request queue sizing
+        size = self.request_queue_size
+        if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
+            # start with between 1 and configured size
+            size = int(self.np_random.integers(1, self.request_queue_size + 1))
 
         self.request_queue = list(
             self.np_random.choice(
@@ -914,11 +923,20 @@ class Warehouse(gym.Env):
 
         shelf_delivered = False
         if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
-            if np.random.rand() < 0.3:
-                candidates = [s for s in self.shelfs if s not in self.request_queue]
-                if candidates:
-                    new_request = self.np_random.choice(candidates)
-                    self.request_queue.append(new_request)
+            # increment global counter
+            self._continuous_step_counter += 1
+            if (self._continuous_step_counter % self.continuous_spawn_interval == 0):
+                if self.np_random.random() < self.continuous_spawn_prob:
+                    carried_shelves = {ag.carrying_shelf for ag in self.agents if ag.carrying_shelf}
+                    candidates = [
+                        s for s in self.shelfs
+                        if s not in self.request_queue and s not in carried_shelves
+                    ]
+                    if candidates:
+                        new_request = self.np_random.choice(candidates)
+                        self.request_queue.append(new_request)
+                        self._continuous_step_counter = 0
+
         for y, x in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, x, y]
 
