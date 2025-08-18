@@ -7,7 +7,8 @@ from gymnasium.utils import seeding
 import networkx as nx
 import numpy as np
 
-#TODO Need make the request Queue Continous
+# DONE: Need make the request Queue Continous
+# TODO: Decouple the return and pickup tasks
 
 _COLLISION_LAYERS = 2
 
@@ -60,6 +61,9 @@ class Request_Queue_Type(Enum):
     FIXED = 0
     CONTINUOUS = 1
 
+class Decoupling(Enum):
+    NONE = 0
+    SEPARATE = 1
 
 class ImageLayer(Enum):
     """
@@ -161,6 +165,7 @@ class Warehouse(gym.Env):
         max_steps: Optional[int],
         reward_type: RewardType,
         request_queue_type: Request_Queue_Type = Request_Queue_Type.FIXED,
+        decoupling: Decoupling = Decoupling.NONE,
         layout: Optional[str] = None,
         observation_type: ObservationType = ObservationType.FLATTENED,
         image_observation_layers: List[ImageLayer] = [
@@ -268,7 +273,11 @@ class Warehouse(gym.Env):
         self.request_queue_size = request_queue_size
         self.request_queue = []
         self.request_queue_type = request_queue_type
+
+        self.decoupling = decoupling
         
+        if self.decoupling == Decoupling.SEPARATE:
+            self.return_request_queue = []
         # Fixed interval throttle settings (active only in CONTINUOUS mode)
         if self.request_queue_type == Request_Queue_Type.CONTINUOUS:
             self._continuous_step_counter: int = 0
@@ -819,6 +828,9 @@ class Warehouse(gym.Env):
                 self.shelfs, size=size, replace=False
             )
         )
+
+        if self.decoupling == Decoupling.SEPARATE:
+            self.return_request_queue = []
 
         return tuple([self._make_obs(agent) for agent in self.agents]), self._get_info()
 
