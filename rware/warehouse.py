@@ -967,6 +967,10 @@ class Warehouse(gym.Env):
                 candidates = [s for s in self.shelfs if s not in self.request_queue]
                 new_request = self.np_random.choice(candidates)
                 self.request_queue[self.request_queue.index(shelf)] = new_request
+
+            #TODO Need to make the agent drop the shelf
+            agent_id = self.grid[_LAYER_AGENTS, x, y]
+            self.agents[agent_id - 1].carrying_shelf = None
             # also reward the agents
             if self.reward_type == RewardType.GLOBAL:
                 rewards += 1
