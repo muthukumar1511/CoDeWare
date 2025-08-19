@@ -275,7 +275,8 @@ class Warehouse(gym.Env):
         self.request_queue_type = request_queue_type
 
         self.decoupling = decoupling
-        
+        self.delay_buffer = []
+
         if self.decoupling == Decoupling.SEPARATE:
             self.return_request_queue = []
         # Fixed interval throttle settings (active only in CONTINUOUS mode)
@@ -787,6 +788,7 @@ class Warehouse(gym.Env):
         self._cur_steps = 0
         # reset continuous counter
         self._continuous_step_counter = 0
+        self.delay_buffer = []
 
         # n_xshelf = (self.grid_size[1] - 1) // 3
         # n_yshelf = (self.grid_size[0] - 2) // 9
@@ -948,6 +950,15 @@ class Warehouse(gym.Env):
                         new_request = self.np_random.choice(candidates)
                         self.request_queue.append(new_request)
                         self._continuous_step_counter = 0
+            # the If condition need to go here 
+            new_buffer = []
+            for shelf, delay in self.delay_buffer:
+                delay -= 1
+                if delay <= 0:
+                    self.request_queue.append(shelf)   # item is ready now
+                else:
+                    new_buffer.append((shelf, delay))
+            self.delay_buffer = new_buffer
 
         for y, x in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, x, y]
@@ -971,6 +982,9 @@ class Warehouse(gym.Env):
             #TODO Need to make the agent drop the shelf
             agent_id = self.grid[_LAYER_AGENTS, x, y]
             self.agents[agent_id - 1].carrying_shelf = None
+            self.delay_buffer.append((shelf, np.random.randint(5, 10)))
+
+            #TODO Need to add a buffer for each shelf.
             # also reward the agents
             if self.reward_type == RewardType.GLOBAL:
                 rewards += 1
