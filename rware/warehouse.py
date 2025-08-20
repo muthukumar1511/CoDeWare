@@ -964,7 +964,7 @@ class Warehouse(gym.Env):
                     new_buffer.append((shelf, delay))
             self.delay_buffer = new_buffer
 
-        print("The return request queue :", self.return_request_queue)
+        # print("The return request queue :", self.return_request_queue)
 
         for y, x in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, x, y]
