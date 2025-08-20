@@ -36,7 +36,7 @@ for size, diff, agents in _perms:
             "max_steps": 500,
             "reward_type": RewardType.INDIVIDUAL,
             "request_queue_type": Request_Queue_Type.CONTINUOUS,
-            "decoupling": Decoupling.NONE,
+            "decoupling": Decoupling.SEPARATE,
         },
     )
 

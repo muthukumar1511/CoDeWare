@@ -59,6 +59,7 @@ _BACKGROUND_COLOR = _WHITE
 _GRID_COLOR = _BLACK
 _SHELF_COLOR = _DARKSLATEBLUE
 _SHELF_REQ_COLOR = _TEAL
+_SHELF_RET_REQ_COLOR = _GREEN
 _AGENT_COLOR = _DARKORANGE
 _AGENT_LOADED_COLOR = _RED
 _AGENT_DIR_COLOR = _BLACK
@@ -184,7 +185,9 @@ class Viewer(object):
             x, y = shelf.x, shelf.y
             y = self.rows - y - 1  # pyglet rendering is reversed
             shelf_color = (
-                _SHELF_REQ_COLOR if shelf in env.request_queue else _SHELF_COLOR
+                _SHELF_REQ_COLOR if shelf in env.request_queue 
+                else _SHELF_RET_REQ_COLOR if shelf in env.return_request_queue
+                else _SHELF_COLOR
             )
 
             batch.add(

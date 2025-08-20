@@ -1,6 +1,7 @@
 from collections import OrderedDict
 from enum import Enum
 from typing import List, Tuple, Optional, Dict
+from urllib import request
 
 import gymnasium as gym
 from gymnasium.utils import seeding
@@ -923,10 +924,13 @@ class Warehouse(gym.Env):
                 agent.dir = agent.req_direction()
             elif agent.req_action == Action.TOGGLE_LOAD and not agent.carrying_shelf:
                 shelf_id = self.grid[_LAYER_SHELFS, agent.y, agent.x]
-                if shelf_id:
+                if shelf_id and not any(self.shelfs[shelf_id - 1] == shelf for shelf, _ in self.delay_buffer):
                     agent.carrying_shelf = self.shelfs[shelf_id - 1]
             elif agent.req_action == Action.TOGGLE_LOAD and agent.carrying_shelf:
                 if not self._is_highway(agent.x, agent.y):
+                    if self.decoupling == Decoupling.SEPARATE and agent.carrying_shelf in self.return_request_queue:
+                        self.return_request_queue.pop(self.return_request_queue.index(agent.carrying_shelf))
+                        rewards[agent.id - 1] += 1 # for returning    
                     agent.carrying_shelf = None
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         rewards[agent.id - 1] += 0.5
@@ -955,10 +959,12 @@ class Warehouse(gym.Env):
             for shelf, delay in self.delay_buffer:
                 delay -= 1
                 if delay <= 0:
-                    self.request_queue.append(shelf)   # item is ready now
+                    self.return_request_queue.append(shelf)   # item is ready now
                 else:
                     new_buffer.append((shelf, delay))
             self.delay_buffer = new_buffer
+
+        print("The return request queue :", self.return_request_queue)
 
         for y, x in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, x, y]
