@@ -930,7 +930,7 @@ class Warehouse(gym.Env):
                 if not self._is_highway(agent.x, agent.y):
                     if self.decoupling == Decoupling.SEPARATE and agent.carrying_shelf in self.return_request_queue:
                         self.return_request_queue.pop(self.return_request_queue.index(agent.carrying_shelf))
-                        rewards[agent.id - 1] += 1 # for returning    
+                        rewards[agent.id - 1] += 0.5 # for returning    
                     agent.carrying_shelf = None
                     if agent.has_delivered and self.reward_type == RewardType.TWO_STAGE:
                         rewards[agent.id - 1] += 0.5
@@ -996,7 +996,10 @@ class Warehouse(gym.Env):
                 rewards += 1
             elif self.reward_type == RewardType.INDIVIDUAL:
                 agent_id = self.grid[_LAYER_AGENTS, x, y]
-                rewards[agent_id - 1] += 1
+                if self.decoupling == Decoupling.SEPARATE:
+                    rewards[agent_id - 1] += 0.5
+                else:
+                    rewards[agent_id - 1] += 1
             elif self.reward_type == RewardType.TWO_STAGE:
                 agent_id = self.grid[_LAYER_AGENTS, x, y]
                 self.agents[agent_id - 1].has_delivered = True
