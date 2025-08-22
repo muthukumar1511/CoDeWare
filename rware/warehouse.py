@@ -988,7 +988,7 @@ class Warehouse(gym.Env):
             #TODO Need to make the agent drop the shelf
             agent_id = self.grid[_LAYER_AGENTS, x, y]
             self.agents[agent_id - 1].carrying_shelf = None
-            self.delay_buffer.append((shelf, np.random.randint(5, 10)))
+            self.delay_buffer.append((shelf, np.random.randint(15, 20)))
 
             #TODO Need to add a buffer for each shelf.
             # also reward the agents
