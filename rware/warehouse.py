@@ -325,8 +325,10 @@ class Warehouse(gym.Env):
         self.column_height = column_height
         self.grid = np.zeros((_COLLISION_LAYERS, *self.grid_size), dtype=np.int32)
         self.goals = [
+            (self.grid_size[1] // 2 - 2, self.grid_size[0] - 1),
             (self.grid_size[1] // 2 - 1, self.grid_size[0] - 1),
             (self.grid_size[1] // 2, self.grid_size[0] - 1),
+            (self.grid_size[1] // 2 + 1, self.grid_size[0] - 1)
         ]
 
         self.highways = np.zeros(self.grid_size, dtype=np.uint8)
