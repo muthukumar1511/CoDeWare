@@ -278,6 +278,7 @@ class Warehouse(gym.Env):
         self.decoupling = decoupling
         self.delay_buffer = []
 
+        self.punish_timer = 0
         if self.decoupling == Decoupling.SEPARATE:
             self.return_request_queue = []
         # Fixed interval throttle settings (active only in CONTINUOUS mode)
@@ -965,8 +966,21 @@ class Warehouse(gym.Env):
                 else:
                     new_buffer.append((shelf, delay))
             self.delay_buffer = new_buffer
+        
+        goal_free = 0
+        for y, x in self.goals:
+            shelf_id = self.grid[_LAYER_SHELFS, x, y]
 
-        # print("The return request queue :", self.return_request_queue)
+            if not shelf_id:
+                goal_free += 1
+                continue
+        if goal_free > (len(self.goals) - 1):
+            self.punish_timer += 1
+        #Punishing Everyone
+        if self.punish_timer > 15:
+            self.punish_timer = 0
+            for i, ind_rew in enumerate(rewards):
+                rewards[i] -= 1 - (goal_free**2 / (len(self.goals))**2)
 
         for y, x in self.goals:
             shelf_id = self.grid[_LAYER_SHELFS, x, y]
