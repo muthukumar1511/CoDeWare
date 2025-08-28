@@ -679,6 +679,22 @@ class Warehouse(gym.Env):
             # 'has_shelf': MultiBinary(1),
             # 'shelf_requested': MultiBinary(1),
 
+            # To mention it is in return face.
+            if agent.carrying_shelf and agent.carrying_shelf in self.return_request_queue:
+                obs.write([1.0])
+            else:
+                obs.write([0.0])
+
+            # need to add the no of unoccupied goal location.
+            counter = 0
+            for y, x in self.goals:
+                shelf_id = self.grid[_LAYER_SHELFS, x, y]
+
+                if shelf_id is None:
+                    counter += 1
+            
+            obs.write([counter])
+
             for i, (id_agent, id_shelf) in enumerate(zip(agents, shelfs)):
                 if id_agent == 0:
                     # no agent, direction, or message
