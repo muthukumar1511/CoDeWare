@@ -456,7 +456,7 @@ class Warehouse(gym.Env):
     def _use_slow_obs(self):
         self.fast_obs = False
 
-        self._obs_bits_for_self = 4 + len(Direction)
+        self._obs_bits_for_self = 4 + len(Direction) + 2
         self._obs_bits_per_agent = 1 + len(Direction) + self.msg_bits
         self._obs_bits_per_shelf = 2
         self._obs_bits_for_requests = 2
@@ -491,6 +491,8 @@ class Warehouse(gym.Env):
                     "carrying_shelf": gym.spaces.MultiBinary(1),
                     "direction": gym.spaces.Discrete(4),
                     "on_highway": gym.spaces.MultiBinary(1),
+                    "return_request_flag": gym.spaces.MultiBinary(1),
+                    "free_goal_count": gym.spaces.Box(low=0, high=len(self.goals), shape=(1,), dtype=np.int32)
                 }
             )
         )
@@ -679,22 +681,6 @@ class Warehouse(gym.Env):
             # 'has_shelf': MultiBinary(1),
             # 'shelf_requested': MultiBinary(1),
 
-            # To mention it is in return face.
-            if agent.carrying_shelf and agent.carrying_shelf in self.return_request_queue:
-                obs.write([1.0])
-            else:
-                obs.write([0.0])
-
-            # need to add the no of unoccupied goal location.
-            counter = 0
-            for y, x in self.goals:
-                shelf_id = self.grid[_LAYER_SHELFS, x, y]
-
-                if shelf_id is None:
-                    counter += 1
-            
-            obs.write([counter])
-
             for i, (id_agent, id_shelf) in enumerate(zip(agents, shelfs)):
                 if id_agent == 0:
                     # no agent, direction, or message
@@ -714,6 +700,23 @@ class Warehouse(gym.Env):
                     obs.write(
                         [1.0, int(self.shelfs[id_shelf - 1] in self.request_queue)]
                     )  # shelf presence and request status
+
+            # To mention it is in return face.
+            if agent.carrying_shelf and agent.carrying_shelf in self.return_request_queue:
+                obs.write([1.0])
+            else:
+                obs.write([0.0])
+
+            # need to add the no of unoccupied goal location.
+            counter = 0
+            for y, x in self.goals:
+                shelf_id = self.grid[_LAYER_SHELFS, x, y]
+
+                if shelf_id is None:
+                    counter += 1
+            
+            obs.write([counter])
+
             return obs.vector
 
         # write dictionary observations
